@@ -11,36 +11,30 @@ function TodoList() {
   const [info, setInfo] = useState<TodoInfo | undefined>()
   const [filter, setFilter] = useState<Filter>('all')
 
-  useEffect(() => loadTodos(), [])
+  useEffect(() => loadTodos(filter), [filter])
 
-  function loadTodos() {
-    getTodos('all').then((res) => {
+  function loadTodos(filter: Filter) {
+    getTodos(filter).then((res) => {
       setTodos(res.data)
       setInfo(res.info)
     })
   }
 
   function createTodo(title: string) {
-    addTodo({ title }).then(() => loadTodos())
+    addTodo({ title }).then(() => loadTodos(filter))
   }
 
   function removeTodo(id: number) {
-    deleteTodo(id).then(() => loadTodos())
+    deleteTodo(id).then(() => loadTodos(filter))
   }
 
   function updateTodoTitle(id: number, title: string) {
-    updateTodo(id, { title }).then(() => loadTodos())
+    updateTodo(id, { title }).then(() => loadTodos(filter))
   }
 
   function updateTodoStatus(id: number, isDone: boolean) {
-    updateTodo(id, { isDone }).then(() => loadTodos())
+    updateTodo(id, { isDone }).then(() => loadTodos(filter))
   }
-
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'inWork') return !todo.isDone
-    if (filter === 'completed') return todo.isDone
-    return true
-  })
 
   const filters = [
     { key: 'all', label: 'Все', count: info?.all },
@@ -63,7 +57,7 @@ function TodoList() {
           </p>
         ))}
       </div>
-      {filteredTodos.map((todo) => {
+      {todos.map((todo) => {
         function handleToggle (id: number, isDone: boolean){
           updateTodoStatus(id, isDone)
         }
