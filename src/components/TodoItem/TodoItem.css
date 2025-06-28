@@ -1,54 +1,26 @@
 .todo-item {
+    position: relative;
     display: flex;
     align-items: center;
-    background-color: #fff;
-    padding: 12px 16px;
+    padding: 24px 16px;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     margin-bottom: 12px;
     gap: 12px;
 }
 
-.checkbox-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
+.todo-item .ant-form-item {
+    margin-bottom: 0;
+    flex: 1;
 }
 
-.checkbox-wrapper input[type="checkbox"] {
-    opacity: 0;
+.todo-item .ant-form-item-explain {
     position: absolute;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-}
-
-.custom-checkbox {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    display: inline-block;
-    position: relative;
-    transition: border 0.2s;
-    cursor: pointer;
-}
-
-.checkbox-wrapper input:checked + .custom-checkbox {
-    background-color: #646cff;
-    border-color: #646cff;
-}
-
-.checkbox-wrapper input:checked + .custom-checkbox::after {
-    content: '';
-    position: absolute;
-    left: 5px;
-    top: 3px;
-    width: 6px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+    top: 100%;
+    left: 0;
+    font-size: 12px;
+    line-height: 1.2;
+    pointer-events: none;
 }
 
 .todo-title {
@@ -63,23 +35,4 @@
 
 .todo-input-wrapper {
     flex: 1;
-}
-
-.todo-input {
-    flex: 1;
-    border: none;
-    border-bottom: 2px solid #ccc;
-    padding: 8px 4px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.todo-input:focus {
-    border-bottom-color: #646cff;
-}
-
-.todo-item.editing .custom-checkbox {
-    opacity: 0.3;
-    pointer-events: none;
 }
