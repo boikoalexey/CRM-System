@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { todolistAPI } from '../api'
+import { useCallback, useEffect, useState } from 'react'
+import { getTodos } from '../api'
 import type { Filter, Todo, TodoInfo } from '../types'
 import { CreateTodoForm } from '../components/CreateTodoForm.tsx'
 import { TodoFilters } from '../components/TodoFilters.tsx'
@@ -10,35 +10,27 @@ const REFRESH_MS = 5000
 export function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [info, setInfo] = useState<TodoInfo>()
-  const [filter, setFilter] = useState<Filter>(
-    () => (localStorage.getItem('todoFilter') as Filter) || 'all'
-  )
+  const [filter, setFilter] = useState<Filter>('all')
 
-  useEffect(() => {
-    loadTodos(filter)
-
-    const id = setInterval(() => {
-      loadTodos(filter)
-    }, REFRESH_MS)
-
-    return () => clearInterval(id)
-  }, [filter])
-
-  useEffect(() => localStorage.setItem('todoFilter', filter), [filter])
-
-  function loadTodos(filter: Filter) {
-    todolistAPI.getTodos(filter)
+  const loadTodos = useCallback(() => {
+    getTodos(filter)
       .then((res) => {
         if (res) {
           setTodos(res.data)
           setInfo(res.info)
         }
       })
-  }
+  }, [filter])
+
+  useEffect(() => {
+    loadTodos()
+    const id = setInterval(() => loadTodos(), REFRESH_MS)
+    return () => clearInterval(id)
+  }, [loadTodos])
 
   return (
     <div className="container">
-      <CreateTodoForm onReload={() => loadTodos(filter)}/>
+      <CreateTodoForm onReload={loadTodos}/>
       <TodoFilters
         current={filter}
         onChange={setFilter}
@@ -48,7 +40,7 @@ export function TodoList() {
         <TodoItem
           key={todo.id}
           todo={todo}
-          onReload={() => loadTodos(filter)}
+          onReload={loadTodos}
         />
       )}
     </div>
