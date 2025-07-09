@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import type { Todo } from '../../types.ts'
-import { todolistAPI } from '../../api'
-import { Checkbox, type CheckboxChangeEvent } from 'antd'
+import { updateTodo, deleteTodo } from '../../api'
+import { Checkbox, type CheckboxChangeEvent, notification } from 'antd'
 import { Form, Input, Button } from 'antd'
 import { EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 import { taskTitleRules } from '../../utils/validationRules.ts'
@@ -12,7 +12,7 @@ type Props = {
   onReload: () => void
 }
 
-export function TodoItem(props: Props) {
+export const TodoItem = memo(function TodoItem(props: Props) {
   const { todo, onReload } = props
   const [form] = Form.useForm<{ title: string }>()
 
@@ -29,22 +29,27 @@ export function TodoItem(props: Props) {
           return
         }
 
-        todolistAPI
-          .updateTodo(todo.id, { title: trimmedTitle })
+        updateTodo(todo.id, { title: trimmedTitle })
           .then(() => {
             setIsEditing(false)
             onReload()
+          })
+          .catch((error) => {
+            notification.error({
+              message: 'Error updating task',
+              description: error?.message
+            })
           })
       })
   }
 
   function changeTaskStatus(e: CheckboxChangeEvent) {
     const isDone = e.target.checked
-    todolistAPI.updateTodo(todo.id, { isDone }).then(onReload)
+    updateTodo(todo.id, { isDone }).then(onReload)
   }
 
   function deleteTask() {
-    todolistAPI.deleteTodo(todo.id).then(onReload)
+    deleteTodo(todo.id).then(onReload)
   }
 
   function handleEdit() {
@@ -87,5 +92,13 @@ export function TodoItem(props: Props) {
         onClick={isEditing ? handleCancel : deleteTask}
       />
     </div>
+  )
+}, areEqual)
+
+function areEqual(prevProps: Props, nextProps: Props): boolean {
+  return (
+    prevProps.todo.id === nextProps.todo.id &&
+    prevProps.todo.title === nextProps.todo.title &&
+    prevProps.todo.isDone === nextProps.todo.isDone
   )
 }

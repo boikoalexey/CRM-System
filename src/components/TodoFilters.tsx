@@ -1,5 +1,6 @@
 import type { Filter } from '../types'
 import { Button } from 'antd'
+import { memo } from 'react'
 
 type Props = {
   current: Filter
@@ -11,7 +12,9 @@ type Props = {
   }
 }
 
-export function TodoFilters({ current, onChange, counts }: Props) {
+export const TodoFilters = memo(function TodoFilters(props: Props) {
+  const { current, onChange, counts } = props
+
   const filters = [
     { key: 'all', label: 'Все', count: counts?.all },
     { key: 'inWork', label: 'В работе', count: counts?.inWork },
@@ -32,4 +35,4 @@ export function TodoFilters({ current, onChange, counts }: Props) {
       ))}
     </div>
   )
-}
+})
