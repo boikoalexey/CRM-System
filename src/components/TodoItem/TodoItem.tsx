@@ -1,103 +1,104 @@
-import { type ChangeEvent, useState } from 'react'
-import { validateTitle } from '../../utils/validateTitle.ts'
-import { Button } from '../common/Button.tsx'
+import { memo, useState } from 'react'
+import type { Todo } from '../../types.ts'
+import { updateTodo, deleteTodo } from '../../api'
+import { Checkbox, type CheckboxChangeEvent, notification } from 'antd'
+import { Form, Input, Button } from 'antd'
+import { EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
+import { taskTitleRules } from '../../utils/validationRules.ts'
 import './TodoItem.css'
 
 type Props = {
-  id: number
-  title: string
-  completed: boolean
-  onToggleStatus: (id: number, isDone: boolean) => void
-  onEdit: (id: number, newTitle: string) => void
-  onDelete: (id: number) => void
+  todo: Todo
+  onReload: () => void
 }
 
-export function TodoItem(props: Props) {
-  const { id, title, completed, onToggleStatus, onEdit, onDelete } = props
+export const TodoItem = memo(function TodoItem(props: Props) {
+  const { todo, onReload } = props
+  const [form] = Form.useForm<{ title: string }>()
 
   const [isEditing, setIsEditing] = useState(false)
-  const [inputValue, setInputValue] = useState(title)
-  const [error, setError] = useState<string | null>(null)
 
   function handleSave() {
-    const trimmed = inputValue.trim()
-    const validationError = validateTitle(trimmed)
+    form
+      .validateFields()
+      .then(({ title }) => {
+        const trimmedTitle = title.trim()
 
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+        if (trimmedTitle === todo.title) {
+          setIsEditing(false)
+          return
+        }
 
-    if (trimmed === title) {
-      setIsEditing(false)
-      return
-    }
+        updateTodo(todo.id, { title: trimmedTitle })
+          .then(() => {
+            setIsEditing(false)
+            onReload()
+          })
+          .catch((error) => {
+            notification.error({
+              message: 'Error updating task',
+              description: error?.message
+            })
+          })
+      })
+  }
 
-    onEdit(id, trimmed)
-    setIsEditing(false)
-    setError(null)
+  function changeTaskStatus(e: CheckboxChangeEvent) {
+    const isDone = e.target.checked
+    updateTodo(todo.id, { isDone }).then(onReload)
+  }
+
+  function deleteTask() {
+    deleteTodo(todo.id).then(onReload)
+  }
+
+  function handleEdit() {
+    form.setFieldsValue({ title: todo.title })
+    setIsEditing(true)
   }
 
   function handleCancel() {
-    setInputValue(title)
     setIsEditing(false)
   }
 
-  function handleBlur() {
-    handleCancel()
-  }
-
-  function changeTaskTitle (e: ChangeEvent<HTMLInputElement>) {
-    setInputValue(e.currentTarget.value)
-    setError(null)
-  }
-
-  function changeTaskStatus(event: ChangeEvent<HTMLInputElement>) {
-    const newTaskStatus = event.currentTarget.checked
-    onToggleStatus(id, newTaskStatus)
-  }
-
   return (
-    <div className={`todo-item ${isEditing ? 'editing' : ''}`}>
-      <label className="checkbox-wrapper">
-        <input
-          type="checkbox"
-          checked={completed}
-          onChange={changeTaskStatus}
-          onBlur={handleBlur}
-          disabled={isEditing}
-        />
-        <span className="custom-checkbox"></span>
-      </label>
+    <div className={'todo-item'}>
+      <Checkbox checked={todo.isDone} disabled={isEditing} onChange={changeTaskStatus} />
 
       {isEditing ? (
-        <div className={'todo-input-wrapper'}>
-          <input
-            type="text"
-            className="todo-input"
-            value={inputValue}
-            onChange={changeTaskTitle}
-            autoFocus
-          />
-          {error && <div className="error-message">{error}</div>}
-        </div>
+        <Form
+          form={form}
+          component={false}
+          initialValues={{ title: todo.title }}
+        >
+          <Form.Item name="title" rules={taskTitleRules}>
+            <Input autoFocus/>
+          </Form.Item>
+        </Form>
       ) : (
-        <span className={`todo-title ${completed ? 'completed' : ''}`}>
-          {title}
-        </span>
+        <span className={`todo-title ${todo.isDone ? 'completed' : ''}`}>{todo.title}</span>
       )}
 
-      {isEditing ? (
-        <>
-          <Button title={'✔'} className="btn edit" onClick={handleSave} />
-          <Button title={'✖'} className="btn delete" onClick={handleCancel} />
-        </>
-      ) : (
-        <>
-          <Button title={'✎'} className="btn edit" onClick={() => setIsEditing(true)} />
-          <Button title={'🗑'} className="btn delete" onClick={() => onDelete(id)} />
-        </>
-      )}
+      <Button
+        variant="outlined"
+        color={isEditing ? 'cyan' : 'primary'}
+        icon={isEditing ? <CheckOutlined /> : <EditOutlined />}
+        onClick={isEditing ? handleSave : handleEdit}
+      />
+      <Button
+        variant="outlined"
+        color="danger"
+        icon={isEditing ? <CloseOutlined /> : <DeleteOutlined />}
+        onClick={isEditing ? handleCancel : deleteTask}
+      />
     </div>
+  )
+}, areEqual)
+
+function areEqual(prevProps: Props, nextProps: Props): boolean {
+  return (
+    prevProps.todo.id === nextProps.todo.id &&
+    prevProps.todo.title === nextProps.todo.title &&
+    prevProps.todo.isDone === nextProps.todo.isDone
   )
 }

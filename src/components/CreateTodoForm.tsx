@@ -1,54 +1,49 @@
-import { type ChangeEvent, type KeyboardEvent, useState } from 'react'
-import { validateTitle } from '../utils/validateTitle.ts'
-import { Button } from './common/Button.tsx'
+import { Form, Input, Button, Space, notification } from 'antd'
+import { memo } from 'react'
+import { addTodo } from '../api'
+import { taskTitleRules } from '../utils/validationRules'
 
 type Props = {
-  onCreateItem: (title: string) => void
+  onReload: () => void
 }
 
-export function CreateTodoForm(props: Props) {
-  const { onCreateItem } = props
+export const CreateTodoForm = memo(function CreateTodoForm(props: Props) {
+  const { onReload } = props
+  const [form] = Form.useForm<{ title: string }>()
 
-  const [title, setTitle] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  function onFinish({ title }: { title: string }) {
+    const trimmedTitle = title.trim()
 
-
-  function changeTaskTitleHandler (event: ChangeEvent<HTMLInputElement>) {
-    setTitle(event.currentTarget.value)
-    setError(null)
-  }
-
-  function createTaskOnEnterHandler (event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') {
-      createItemHandler()
-    }
-  }
-
-  function createItemHandler () {
-    const validationError = validateTitle(title)
-    if (validationError) {
-      setError(validationError)
-    } else {
-      onCreateItem(title.trim())
-      setTitle('')
-    }
+    addTodo({ title: trimmedTitle })
+      .then(() => {
+        form.resetFields()
+        onReload()
+      })
+      .catch((error) => {
+        notification.error({
+          message: 'Error creating task',
+          description: error?.message,
+        })
+      })
   }
 
   return (
-    <div>
-      <div className="task-input-wrapper">
-        <input
-          value={title}
-          placeholder={'Task To Be Done'}
-          onChange={changeTaskTitleHandler}
-          onKeyDown={createTaskOnEnterHandler}
-          className={`task-input ${error ? 'error' : ''}`}
-        />
-        <Button title={'Add'} onClick={createItemHandler} className={'btn primary'}/>
-      </div>
-      <div className={'error-wrapper'}>
-        {error && <div className={'error-message'}>{error}</div>}
-      </div>
-    </div>
+    <Form
+      form={form}
+      name="create-todo"
+      autoComplete="off"
+      onFinish={onFinish}
+      initialValues={{ title: '' }}
+    >
+      <Space.Compact style={{ width: '100%' }}>
+        <Form.Item name="title" rules={taskTitleRules} required style={{ flex: 1 }}>
+          <Input placeholder="Task To Be Done" allowClear />
+        </Form.Item>
+
+        <Button type="primary" htmlType="submit">
+          Add
+        </Button>
+      </Space.Compact>
+    </Form>
   )
-}
+})
