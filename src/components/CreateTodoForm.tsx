@@ -11,29 +11,20 @@ export const CreateTodoForm = memo(function CreateTodoForm(props: Props) {
   const { onReload } = props
   const [form] = Form.useForm<{ title: string }>()
 
-  function onFinish() {
-    form
-      .validateFields()
-      .then(({ title }) => {
-        const trimmedTitle = title.trim()
+  function onFinish({ title }: { title: string }) {
+    const trimmedTitle = title.trim()
 
-        addTodo({ title: trimmedTitle })
-          .then(() => {
-            form.resetFields()
-            onReload()
-          })
-          .catch((error) => {
-            notification.error({
-              message: 'Error creating task',
-              description: error?.message
-            })
-          })
+    addTodo({ title: trimmedTitle })
+      .then(() => {
+        form.resetFields()
+        onReload()
       })
-  }
-
-  function isSubmitDisabled () {
-    return !form.isFieldsTouched(true) ||
-    form.getFieldsError().some(({ errors }) => errors.length)
+      .catch((error) => {
+        notification.error({
+          message: 'Error creating task',
+          description: error?.message,
+        })
+      })
   }
 
   return (
@@ -42,26 +33,17 @@ export const CreateTodoForm = memo(function CreateTodoForm(props: Props) {
       name="create-todo"
       autoComplete="off"
       onFinish={onFinish}
+      initialValues={{ title: '' }}
     >
-      <Form.Item>
-        <Space.Compact style={{ width: '100%' }}>
-          <Form.Item name="title" rules={taskTitleRules} noStyle>
-            <Input placeholder="Task To Be Done" allowClear />
-          </Form.Item>
+      <Space.Compact style={{ width: '100%' }}>
+        <Form.Item name="title" rules={taskTitleRules} required style={{ flex: 1 }}>
+          <Input placeholder="Task To Be Done" allowClear />
+        </Form.Item>
 
-          <Form.Item shouldUpdate noStyle>
-            {() => (
-              <Button
-                type="primary"
-                htmlType="submit"
-                disabled={isSubmitDisabled()}
-              >
-                Add
-              </Button>
-            )}
-          </Form.Item>
-        </Space.Compact>
-      </Form.Item>
+        <Button type="primary" htmlType="submit">
+          Add
+        </Button>
+      </Space.Compact>
     </Form>
   )
 })
